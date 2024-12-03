@@ -1,0 +1,81 @@
+https://medium.com/@chaitanyakadu03/javascript-mechanics-from-call-stack-to-event-loop-38d2a97c31ce
+
+In this blog, we will try to understand some important JavaScript mechanics. First of all, I highly recommend programmers to go through the fundamental concepts like single-threaded nature and Just-In-Time (JIT) compilation. You can go through “The crux of JavaScript” blog to get fundamentals clear.
+
+
+@theavocoder
+In order to keep things simple let’s focus on call stack and avoid the JavaScript Engine and the Heap. The blog tries to keep theory based approach to explain various topics rather than elaborate examples.
+
+The Call Stack
+The call stack is a mechanism that is responsible for executing the function code synchronously. When any script calls a function, the interpreter adds it to the call stack and then starts carrying out the function. When the current function is executed then it is removed from the call stack this is when the scripts calls the next function. The setTimeout and .then() callback functions are handled differently because they are asynchronous and rely on Web APIs and the event loop to manage their execution. For that let’s understand web apis.
+
+Web APIs
+The web api deals with the registered callback functions asynchronously. Web APIs are part of the browser or environment, not JavaScript itself. Let’s take an example..
+
+// call stack
+setTimeout(() => {
+  console.log("Web API: Timeout callback");
+}, 1000);
+
+=>
+// web apis
+() => {
+  console.log("Web API: Timeout callback");
+}, 1000
+The setTimeout() is a classic example of a asynchronous callback function assigned to the web apis. Here, the execution is managed by the browser and when ever the task is completed it gets pushed to the appropriate queue (task queue or microtask queue). Pushed where task queue or microtask queue? Here we will have to understand the concept of setTimeout alike callback functions and .then() callback functions.
+
+// setTimeout callback function
+
+setTimeout(() => {
+  console.log("Web API: Timeout callback");
+}, 1000);
+// promise based callback function
+
+Promise.resolve().then(() => {
+  console.log("Microtask queue: Promise callback");
+});
+The .then() callback functions are pushed to the microtask queue and other one to the task queue. Why are they not pushed directly to call stack? The call stack needs to be empty before any async callback executed function gets pushed. Thus a queue is maintained where they are pushed until the call stack gets empty.
+
+Task Queue vs. Microtask Queue
+The microtask queue holds higher priority over task queue. This means that if both the task queue and the microtask queue has callback-executed functions present the microtask queue will always be prioritized over task queue. Hence, the task queue can push its callbacks to the call stack only after the microtask queue has been fully processed.
+
+The Event Loop
+The event loop checks whether the microtask queue is empty. If it is empty, it then checks the task queue. The event loop is responsible to push the code from the queue to the call stack.
+
+Common Misconceptions
+JavaScript is still not multithreaded, the code inside the JavaScript engine is executed synchronously. However, the runtime environment manages the code asynchronously.
+
+Conclusion
+JavaScript executes all synchronous code in the call stack first. If it encounters asynchronous code, such as a setTimeout or a Promise, it delegates that to the runtime (browser or Node.js). The resolved callbacks are pushed to the appropriate queues (microtask or task queue), and the event loop ensures their execution in priority order once the call stack is clear. Understanding these concepts allows you to write more efficient and predictable JavaScript code.
+
+
+Visual representation of the flow.
+Challenge
+console.log("Script start");
+
+setTimeout(() => {
+  console.log("Task queue: Timeout 1");
+}, 0);
+
+Promise.resolve().then(() => {
+  console.log("Microtask queue: Promise 1");
+  return Promise.resolve();
+}).then(() => {
+  console.log("Microtask queue: Promise 2");
+});
+setTimeout(() => {
+  console.log("Task queue: Timeout 2");
+}, 0);
+console.log("Script end");
+// console
+Script start
+Script end
+Microtask queue: Promise 1
+Microtask queue: Promise 2
+Task queue: Timeout 1
+Task queue: Timeout 2
+// If your answer was wrong partially?
+// Try to improve the code execution visualization. 
+// Reread the part of blog that was most confusing.
+// If your answer was completely wrong?
+// Reread the whole blog and focus over visualizing.
